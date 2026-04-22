@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>CSOD Widget</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Verdana, sans-serif;
+      background: #EDF1EA;
+    }
+
+    .container {
+      padding: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .titulo {
+      font-size: 16px;
+      font-weight: bold;
+      color: #454f81;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container" id="app">
+  <div class="card">Carregando...</div>
+</div>
+
+<script>
+const CLIENT_ID = "o9yrtl42on9y";
+const BASE_URL = "https://icmaestra3.csod.com";
+
+// IMPORTANTE: GitHub Pages usa URL fixa
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+function getToken() {
+  const hash = window.location.hash;
+  if (hash.includes("access_token")) {
+    const params = new URLSearchParams(hash.replace("#", ""));
+    return params.get("access_token");
+  }
+
+  const authUrl = `${BASE_URL}/services/oauth2/authorize?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+  window.location.href = authUrl;
+}
+
+async function carregarDados(token) {
+  const res = await fetch(`${BASE_URL}/services/api/x/odata/api/views/vw_rpt_training`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  const data = await res.json();
+  render(data.value);
+}
+
+function render(lista) {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  if (!lista || lista.length === 0) {
+    app.innerHTML = "<div class='card'>Sem dados</div>";
+    return;
+  }
+
+  lista.slice(0,5).forEach(item => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `<div class="titulo">${item.trainingTitle || "Treinamento"}</div>`;
+    app.appendChild(div);
+  });
+}
+
+(async function init(){
+  const token = getToken();
+  if (token) carregarDados(token);
+})();
+</script>
+
+</body>
+</html>
